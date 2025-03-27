@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+import imageio.v3
 
 from modules.core.avg_color import avg_color
 
@@ -19,7 +20,8 @@ class Image():
 
 
     def open(filepath):
-        data = cv.imread(filepath)
+        data = imageio.v3.imread(filepath,)
+        data = cv.cvtColor(data,cv.COLOR_RGBA2BGR)
         return Image(data)
 
     def create(width,height,channels = 3):

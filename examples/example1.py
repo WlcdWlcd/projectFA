@@ -1,13 +1,17 @@
-from modules.tools.Renderer import CVrenderer
+from API.rendererAPI import RendererAPI
+from examples.CVRenderer import CVrenderer
 from modules.core.Image import Image
 import cv2 as cv
 import math
-import time
+from threading import Thread
+
 class App:
     def __init__(self):
-        self.renderer = CVrenderer()
-        self.renderer.start()
-        self.image = Image.open("../src/LC/LC-12.png")
+        self.RENDERER_API = RendererAPI(CVrenderer)
+        t = Thread(target = lambda : self.RENDERER_API.start())
+        t.start()
+        print(123)
+        self.image = Image.open("/src/LC/LC-12.png")
         self.gray = self.image.get_gray()
         self.gaus = self.gray.get_gauss((5,5))
         self.thumb = self.gaus.get_thumb(100, 255, cv.THRESH_TOZERO_INV)
@@ -15,19 +19,7 @@ class App:
 
     def run(self):
         print("running")
-        self.renderer.bind_image("image",self.image)
-
-
-        # self.renderer.bind_image("gray",self.gray)
-        # self.renderer.bind_image('thumb', self.thumb)
-
-        # contours = self.thumb.find_contours()
-        # self.countoured_image = self.thumb.get_with_drawed_contours(contours, thickness=2)
-        # self.renderer.bind_image("countered", self.countoured_image)
-
-        # self.bounded_image = self.image.get_with_bounded_contours(contours)
-        # self.renderer.bind_image("bounded", self.bounded_image)
-
+        self.RENDERER_API.bind_image("image", self.image)
 
         self.circles_image = self.image.__copy__()
         circles = self.thumb.find_circles(mindist = max(self.gray.width(),self.gray.height()),
@@ -41,72 +33,24 @@ class App:
         circle = circles[0]
         circle = list(map(int, circle))
         center = circle[0:2]
-        # center = list(map(lambda x: x-1,center))
         radius = int(circle[2])-2
         self.circles_image.draw_circle(center, radius)
         p1=list(map(lambda x: x-radius+1,center))
         p2=list(map(lambda x: x+radius+1,center))
 
-        self.renderer.bind_image("circles", self.circles_image)
+        self.RENDERER_API.bind_image("circles", self.circles_image)
 
         f=3
         self.crop = self.image.get_cropped(p1,p2)
         self.crop.resize(fx=3,fy=3)
         center = (f*self.crop.width()//2,f*self.crop.height()//2)
         radius = f*self.crop.width()//2
-        # self.crop.draw_circle(center, radius,thickness=1)
-        # self.crop.draw_circle(center, int(radius/2.345),thickness=1)
-        self.renderer.bind_image("cropped",self.crop)
-
-        # mask1 = self.crop.get_zeros_like()
-        # mask1.draw_circle(center,radius,thickness=-1,color=(255,255,255))
-        # # mask1.convert_color(cv.COLOR_BGR2BGRA)
-        #
-        # mask2 = self.crop.get_zeros_like()
-        # mask2.draw_circle(center,int(radius/(2.345)),thickness=-1,color=(255,255,255))
-        #
-        #
-        # mask1 = Image(cv.subtract(mask1.data,mask2.data))
-        #
-        # # self.renderer.bind_image("mask1", mask1)
-        # # self.renderer.bind_image("mask2", mask2)
-        #
-        #
-        #
-        # exclude_color = [0,0,120]
-        #
-        # self.r1=Image(self.crop.data).set_mask(mask1,color=exclude_color)
-        # self.renderer.bind_image("r1", self.r1)
-        #
-        # self.r2=Image(self.crop.data).set_mask(mask2,color = exclude_color)
-        # self.renderer.bind_image("r2", self.r2)
-        #
-        # avg_r1_light = self.r1.avg_light(exclude_colors = [exclude_color] )
-        # avg_r2_light = self.r2.avg_light(exclude_colors = [exclude_color] )
-        #
-        # delta_light = 15
-        # h = self.crop.__copy__()
-        # h.highlight_by_image_and_color(self.r1,avg_r1_light-delta_light,exclude_colors = [exclude_color])
-        # h.highlight_by_image_and_color(self.r2,avg_r2_light-delta_light,exclude_colors = [exclude_color])
-        # self.renderer.bind_image("highlight",h)
-
-        # for i in range(radius,-step,-step):
-        #     if i-step<0:
-        #         i=0+step
-        #     mask = self.crop.get_zeros_like()
-        #     mask.draw_circle(center,i,thickness=-1,color=(255,255,255))
-        #     mask.draw_circle(center,i-step,thickness=-1,color=(0,0,0))
-        #     # self.renderer.bind_image(f"mask: {radius} {i}",mask)
-        #     m = self.crop.__copy__().set_mask(mask,color=exclude_color)
-        #     self.renderer.bind_image(f"mask: {radius} {i}",m)
-        #     avg_light = m.avg_light(exclude_color)
-        #     h.highlight_by_image_and_color(m,avg_light-delta_light,exclude_colors=[exclude_color])
+        self.RENDERER_API.bind_image("cropped", self.crop)
 
         # ПЕРЕНЕСТИ В ФУНКЦИЮ!!!
         h=Image(self.crop.data.copy())
-        self.renderer.bind_image("highlighted", h)
+        self.RENDERER_API.bind_image("highlighted", h)
         delta_light = -15
-        checked = []
         bad_pixels=0
         good_pixels=0
 
@@ -128,6 +72,7 @@ class App:
                 else:
                     h.data[x][y]=[0,255,0]
                     good_pixels+=1
+
         print(f"процент загрязнения: {100*(bad_pixels)/(good_pixels+bad_pixels):.2f}%")
 
 

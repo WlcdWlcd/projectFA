@@ -1,19 +1,9 @@
+from examples.BaseRenderer import BaseRenderer
 
 from threading import Thread
 import cv2 as cv
-from modules.core.Image import Image
 
-class renderer():
-    def __init__(self):
-        self.images = {}
-        self.is_running = False
-
-    def bind_image(self,image_name,image:Image):
-        self.images[image_name] = image.data
-    def unbind_image(self,image_name):
-        self.images.pop(image_name)
-
-class CVrenderer(renderer):
+class CVrenderer(BaseRenderer):
     def start(self):
         if not self.is_running:
             t = Thread(target=lambda: self.thread_target())
