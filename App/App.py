@@ -42,8 +42,14 @@ class App():
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.worker.deleteLater)
             self.thread.finished.connect(self.thread.deleteLater)
+
+            #подключение сигнала обновления изображения
             self.worker.image_signal.connect(self.update_image)
-            self.worker.percent_signal.connect(self.update_percent)
+
+            #подключение сигналов обновления процентов
+            self.worker.core_signal.connect(self.core_percetange_update)
+            self.worker.shell_signal.connect(self.shell_percetange_update)
+
             print("starting")
 
             self.thread.start()
@@ -70,9 +76,17 @@ class App():
         )
 
 
-    def update_percent(self,bad_pixels,good_pixels):
-        percent = 100 * (bad_pixels) / (good_pixels + bad_pixels)
-        self.form.PrersentageLabel.setText(f"процент загрязнения: {percent :.2f}%")
+
+
+    def core_percetange_update(self,bad_pixels,pixels_count):
+        percent = 100 * (bad_pixels) / pixels_count
+        self.form.core_label.setText(f"процент загрязнения на ядре(??): {percent :.2f}% { 'критично' if percent>5 else '' }")
+
+    def shell_percetange_update(self,bad_pixels,pixels_count):
+        percent = 100 * (bad_pixels) / pixels_count
+        self.form.shell_label.setText(f"процент загрязнения на оболочке: {percent :.2f}% { 'критично' if percent>10 else '' }")
+
+
 
     def update_image(self,image):
         w = self.form.ImageLabel.width()
